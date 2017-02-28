@@ -49,7 +49,7 @@ RUN apk add php5-fpm \
 RUN curl -sLo /usr/local/bin/ep https://github.com/kreuzwerker/envplate/releases/download/v0.0.8/ep-linux && chmod +x /usr/local/bin/ep
 
 RUN addgroup govi && \
-    adduser govi -h /home/govi -s /bin/bash -D govi -G nginx -G govi
+    adduser govi -h /home/govi -s /bin/bash -D govi -G nginx -G govi -G adm
 
 # Configuración Nginx
 
@@ -58,9 +58,12 @@ RUN mkdir -p /etc/nginx/sites-enabled
 RUN mkdir -p /var/log/nginx/govi.box
 COPY conf/nginx.conf /etc/nginx/nginx.conf
 COPY conf/govi.box.conf /etc/nginx/sites-available/govi.box.conf
+COPY conf/supervisor.govi.box.conf /etc/nginx/sites-available/supervisor.govi.box.conf
 RUN ln -s /etc/nginx/sites-available/govi.box.conf /etc/nginx/sites-enabled/govi.box.conf
+RUN ln -s /etc/nginx/sites-available/supervisor.govi.box.conf /etc/nginx/sites-enabled/supervisor.govi.box.conf
 
-RUN echo "<?php phpinfo(); ?>" > /usr/share/nginx/html/www/info.php
+RUN mkdir -p /usr/share/nginx/html/www && \
+    echo "<?php phpinfo(); ?>" > /usr/share/nginx/html/www/info.php
 
 # Configuración PHP-FPM
 
@@ -105,7 +108,6 @@ RUN sed -i "s|display_errors\s*=\s*Off|display_errors = ${PHP_DISPLAY_ERRORS}|i"
 
 # Configuracón supervisor de procesos
 
-RUN mkdir /var/log/supervisor
 COPY conf/supervisord.conf /etc/supervisord.conf
 
 # Ejecución del script de inicio
