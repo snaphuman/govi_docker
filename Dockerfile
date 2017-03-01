@@ -42,7 +42,8 @@ RUN apk add php5-fpm \
     php5-memcache \
     php5-iconv \
     php5-curl \
-    php5-ctype
+    php5-ctype \
+    php5-phar
 
 # Configuración base
 
@@ -101,6 +102,12 @@ RUN sed -i "s|display_errors\s*=\s*Off|display_errors = ${PHP_DISPLAY_ERRORS}|i"
     sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo= ${PHP_CGI_FIX_PATHINFO}|i" /etc/php5/php.ini
 
 # Instalación de Composer
+
+RUN cd /home/govi && \
+    su -c "php -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\"" - govi # && \
+    su -c "php -r \"if (hash_file('SHA384', 'composer-setup.php') === '55d6ead61b29c7bdee5cccfb50076874187bd9f21f65d8991d46ec5cc90518f447387fb9f76ebae1fbbacf329e583e30') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;\"" - govi && \
+    su -c "php composer-setup.php" - govi && \
+    su -c "php -r \"unlink('composer-setup.php');\"" - govi
 
 # Instalación y Configuración de  Drush con Composer
 
