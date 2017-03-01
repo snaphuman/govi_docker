@@ -103,13 +103,18 @@ RUN sed -i "s|display_errors\s*=\s*Off|display_errors = ${PHP_DISPLAY_ERRORS}|i"
 
 # Instalación de Composer
 
-RUN cd /home/govi && \
-    su -c "php -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\"" - govi # && \
-    su -c "php -r \"if (hash_file('SHA384', 'composer-setup.php') === '55d6ead61b29c7bdee5cccfb50076874187bd9f21f65d8991d46ec5cc90518f447387fb9f76ebae1fbbacf329e583e30') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;\"" - govi && \
-    su -c "php composer-setup.php" - govi && \
-    su -c "php -r \"unlink('composer-setup.php');\"" - govi
+RUN cd /tmp && \
+    su -c "php -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\"" && \
+    su -c "php -r \"if (hash_file('SHA384', 'composer-setup.php') === '55d6ead61b29c7bdee5cccfb50076874187bd9f21f65d8991d46ec5cc90518f447387fb9f76ebae1fbbacf329e583e30') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;\"" && \
+    su -c "php composer-setup.php --install-dir=/usr/bin --filename=composer" && \
+    su -c "php -r \"unlink('composer-setup.php');\""
 
 # Instalación y Configuración de  Drush con Composer
+
+RUN su -c "composer require drush/drush" - govi
+
+RUN su -c "echo \"export PATH=$PATH:/home/govi/vendor/drush/drush\" > /home/govi/.bash_profile" - govi && \
+    su -c "source /home/govi/.bash_profile" - govi
 
 # Asignar el volumen del DocumentRoot del proyecto
 
@@ -121,4 +126,7 @@ COPY conf/supervisord.conf /etc/supervisord.conf
 
 ADD scripts/start.sh /start.sh
 RUN chmod 700 /start.sh
+
+EXPOSE 80 443
+
 CMD ["/start.sh"]
