@@ -28,6 +28,9 @@ RUN apk add php5-fpm \
     php5-openssl \
     php5-gmp \
     php5-json \
+    php5-pdo \
+    php5-pdo_mysql \
+    php5-pdo_dblib \
     php5-dom \
     php5-zip \
     php5-mysql \
