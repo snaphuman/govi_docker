@@ -58,10 +58,7 @@ RUN apk add mariadb-client \
 
 RUN curl -sLo /usr/local/bin/ep https://github.com/kreuzwerker/envplate/releases/download/v0.0.8/ep-linux && chmod +x /usr/local/bin/ep
 
-RUN addgroup govi && \
-    adduser govi -h /home/govi -s /bin/bash -D govi -G nginx -G govi -G adm
-
-RUN su -c "mkdir -p /home/govi/drupal" - govi
+RUN adduser govi -D govi -u 1000  -G users
 
 # Configuración Nginx
 
@@ -76,8 +73,10 @@ RUN ln -s /etc/nginx/sites-available/supervisor.govi.box.conf /etc/nginx/sites-e
 
 # Verifica la configuración de php
 
-RUN mkdir -p /usr/share/nginx/html/www && \
+RUN mkdir -p /usr/share/nginx/html/www/drupal && \
     echo "<?php phpinfo(); ?>" > /usr/share/nginx/html/www/info.php
+
+RUN chown -R govi:users /usr/share/nginx/html/www/drupal
 
 # Configuración PHP-FPM
 
@@ -85,12 +84,12 @@ ENV PHP_FPM_USER="govi" \
     PHP_FPM_GROUP="users" \
     PHP_FPM_LISTEN_MODE="0660" \
     PHP_FPM_LISTEN="/run/php-fpm/php-fpm.sock" \
-    PHP_FPM_REQUEST_TERMINATE_TIMEOUT="1200" \
+    PHP_FPM_REQUEST_TERMINATE_TIMEOUT="2400" \
     PHP_MEMORY_LIMIT="1024M" \
     PHP_MAX_UPLOAD="50M" \
     PHP_MAX_FILE_UPLOAD="50" \
     PHP_MAX_POST="300M" \
-    PHP_MAX_EXECUTION_TIME="1000" \
+    PHP_MAX_EXECUTION_TIME="3000" \
     PHP_MAX_INPUT_TIME="1000" \
     PHP_DISPLAY_ERRORS="On" \
     PHP_DISPLAY_STARTUP_ERRORS="On" \
@@ -104,7 +103,7 @@ RUN sed -i "s|include\s*=\s*\/etc\/php5\/fpm\.d\/\*\.conf|;include = /etc/php5/f
     sed -i "s|;listen.owner\s*=\s*nobody|listen.owner = ${PHP_FPM_USER}|g" /etc/php5/php-fpm.conf && \
     sed -i "s|;listen.group\s*=\s*nobody|listen.group = ${PHP_FPM_GROUP}|g" /etc/php5/php-fpm.conf && \
     sed -i "s|;listen.mode\s*=\s*0660|listen.mode = ${PHP_FPM_LISTEN_MODE}|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|;request_terminate_timeout\s*=\s*300|request_terminate_timeout = ${PHP_FPM_REQUEST_TERMINATE_TIMEOUT}|g" /etc/php5/php-fpm.conf && \
+    sed -i "s|;request_terminate_timeout\s*=\s*0|request_terminate_timeout = ${PHP_FPM_REQUEST_TERMINATE_TIMEOUT}|g" /etc/php5/php-fpm.conf && \
     sed -i "s|user\s*=\s*nobody|user = ${PHP_FPM_USER}|g" /etc/php5/php-fpm.conf && \
     sed -i "s|group\s*=\s*nobody|group = ${PHP_FPM_GROUP}|g" /etc/php5/php-fpm.conf && \
     sed -i "s|;log_level\s*=\s*notice|log_level = notice|g" /etc/php5/php-fpm.conf && \
@@ -126,21 +125,16 @@ RUN sed -i "s|display_errors\s*=\s*Off|display_errors = ${PHP_DISPLAY_ERRORS}|i"
 ENV COMPOSER_SIG="544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061"
 
 RUN cd /tmp && \
-    su -c "php -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\"" && \
-    su -c "php -r \"if (hash_file('SHA384', 'composer-setup.php') === '${COMPOSER_SIG}') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;\"" && \
-    su -c "php composer-setup.php --install-dir=/usr/bin --filename=composer" && \
-    su -c "php -r \"unlink('composer-setup.php');\""
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
+    php -r "if (hash_file('SHA384', 'composer-setup.php') === '${COMPOSER_SIG}') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;" && \
+    php composer-setup.php --install-dir=/usr/local/bin --filename=composer && \
+    php -r "unlink('composer-setup.php');"
 
 # Instalación y Configuración de  Drush con Composer
 
-RUN su -c "composer require drush/drush" - govi
+RUN COMPOSER_HOME=/opt/drush COMPOSER_BIN_DIR=/usr/local/bin COMPOSER_VENDOR_DIR=/opt/drush/8 composer require drush/drush:8
 
-RUN su -c "echo \"export PATH=$PATH:/home/govi/vendor/drush/drush\" >> /home/govi/.bash_profile" - govi && \
-    su -c "source /home/govi/.bash_profile" - govi && \
-    su -c "mkdir -p /home/govi/.drush/site-aliases" - govi
-
-COPY drupal/aliases.drushrc.php /home/govi/.drush/site-aliases/aliases.drushrc.php
-RUN chown govi:adm /home/govi/.drush/site-aliases/aliases.drushrc.php
+RUN cd /opt/drush/8/drush/drush/ && composer update
 
 # Configuracón supervisor de procesos y scripts de inicio
 
@@ -152,7 +146,5 @@ COPY scripts/start.sh /start.sh
 RUN chmod 700 /start.sh
 
 EXPOSE 80 443 22
-
-WORKDIR /home/govi
 
 CMD ["/start.sh"]
