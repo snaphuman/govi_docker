@@ -46,6 +46,7 @@ RUN apk add php5-fpm \
     php5-iconv \
     php5-curl \
     php5-ctype \
+    php5-zlib \
     php5-phar
 
 # Cliente Maria DB necesario para ejecutar drush
