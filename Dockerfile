@@ -1,4 +1,4 @@
-FROM nginx:1.13.8-alpine
+FROM nginx:1.15.8-alpine
 MAINTAINER <snaphuman> fhernandezn@gmail.com
 
 # Instala dependencias del ambiente de ejecución
@@ -45,15 +45,19 @@ RUN apk add php7 php7-common php7-fpm \
     php7-ctype \
     php7-zlib \
     php7-opcache \
+    php7-tokenizer \
+    php7-xml \
+    php7-fileinfo \
+    php7-session \
+    php7-simplexml \
+    php7-mbstring \
     php7-phar
-    
-RUN ln -s /usr/bin/php7 /usr/bin/php
+
+#RUN ln -s /usr/bin/php7 /usr/bin/php
 
 # Cliente Maria DB necesario para ejecutar drush
 
-RUN apk add mariadb-client \
-    mariadb-client-libs \
-    mariadb-common
+RUN apk add mariadb-client
 
 # Configuración base
 
@@ -123,7 +127,7 @@ RUN sed -i "s|display_errors\s*=\s*Off|display_errors = ${PHP_DISPLAY_ERRORS}|i"
 
 # Instalación de Composer
 
-ENV COMPOSER_SIG="544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061"
+ENV COMPOSER_SIG="48e3236262b34d30969dca3c37281b3b4bbe3221bda826ac6a9a62d6444cdb0dcd0615698a5cbe587c3f0fe57a54d8f5"
 
 RUN cd /tmp && \
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
