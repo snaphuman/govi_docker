@@ -1,4 +1,4 @@
-FROM nginx:1.13.5-alpine
+FROM nginx:1.15.8-alpine
 MAINTAINER <snaphuman> fhernandezn@gmail.com
 
 # Instala dependencias del ambiente de ejecución
@@ -22,38 +22,42 @@ RUN apk add --no-cache --virtual .build-deps \
     bash \
     supervisor
 
-RUN apk add php5-fpm \
-    php5-mcrypt \
-    php5-soap \
-    php5-openssl \
-    php5-gmp \
-    php5-json \
-    php5-pdo \
-    php5-pdo_mysql \
-    php5-pdo_dblib \
-    php5-dom \
-    php5-zip \
-    php5-mysql \
-    php5-mysqli \
-    php5-bcmath \
-    php5-gd \
-    php5-xcache \
-    php5-gettext \
-    php5-xmlreader \
-    php5-xmlrpc \
-    php5-bz2 \
-    php5-memcache \
-    php5-iconv \
-    php5-curl \
-    php5-ctype \
-    php5-zlib \
-    php5-phar
+RUN apk add php7 php7-common php7-fpm \
+    php7-mcrypt \
+    php7-soap \
+    php7-openssl \
+    php7-gmp \
+    php7-json \
+    php7-pdo \
+    php7-pdo_mysql \
+    php7-pdo_dblib \
+    php7-dom \
+    php7-zip \
+    php7-mysqli \
+    php7-bcmath \
+    php7-gd \
+    php7-gettext \
+    php7-xmlreader \
+    php7-xmlrpc \
+    php7-bz2 \
+    php7-iconv \
+    php7-curl \
+    php7-ctype \
+    php7-zlib \
+    php7-opcache \
+    php7-tokenizer \
+    php7-xml \
+    php7-fileinfo \
+    php7-session \
+    php7-simplexml \
+    php7-mbstring \
+    php7-phar
+
+#RUN ln -s /usr/bin/php7 /usr/bin/php
 
 # Cliente Maria DB necesario para ejecutar drush
 
-RUN apk add mariadb-client \
-    mariadb-client-libs \
-    mariadb-common
+RUN apk add mariadb-client
 
 # Configuración base
 
@@ -99,31 +103,31 @@ ENV PHP_FPM_USER="govi" \
 
 RUN mkdir /run/php-fpm
 
-RUN sed -i "s|include\s*=\s*\/etc\/php5\/fpm\.d\/\*\.conf|;include = /etc/php5/fpm.d/*.conf|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|listen\s*=\s*127\.0\.0\.1:9000|listen = ${PHP_FPM_LISTEN}|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|;listen.owner\s*=\s*nobody|listen.owner = ${PHP_FPM_USER}|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|;listen.group\s*=\s*nobody|listen.group = ${PHP_FPM_GROUP}|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|;listen.mode\s*=\s*0660|listen.mode = ${PHP_FPM_LISTEN_MODE}|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|;request_terminate_timeout\s*=\s*0|request_terminate_timeout = ${PHP_FPM_REQUEST_TERMINATE_TIMEOUT}|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|user\s*=\s*nobody|user = ${PHP_FPM_USER}|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|group\s*=\s*nobody|group = ${PHP_FPM_GROUP}|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|;log_level\s*=\s*notice|log_level = notice|g" /etc/php5/php-fpm.conf && \
-    sed -i "s|;clear_env\s*=\s*no|clear_env = no|g" /etc/php5/php-fpm.conf
+RUN sed -i "s|include\s*=\s*\/etc\/php7\/fpm\.d\/\*\.conf|;include = /etc/php7/fpm.d/*.conf|g" /etc/php7/php-fpm.conf && \
+    sed -i "s|listen\s*=\s*127\.0\.0\.1:9000|listen = ${PHP_FPM_LISTEN}|g" /etc/php7/php-fpm.d/www.conf && \
+    sed -i "s|;listen.owner\s*=\s*nobody|listen.owner = ${PHP_FPM_USER}|g" /etc/php7/php-fpm.d/www.conf && \
+    sed -i "s|;listen.group\s*=\s*nobody|listen.group = ${PHP_FPM_GROUP}|g" /etc/php7/php-fpm.d/www.conf && \
+    sed -i "s|;listen.mode\s*=\s*0660|listen.mode = ${PHP_FPM_LISTEN_MODE}|g" /etc/php7/php-fpm.d/www.conf && \
+    sed -i "s|;request_terminate_timeout\s*=\s*0|request_terminate_timeout = ${PHP_FPM_REQUEST_TERMINATE_TIMEOUT}|g" /etc/php7/php-fpm.d/www.conf && \
+    sed -i "s|user\s*=\s*nobody|user = ${PHP_FPM_USER}|g" /etc/php7/php-fpm.d/www.conf && \
+    sed -i "s|group\s*=\s*nobody|group = ${PHP_FPM_GROUP}|g" /etc/php7/php-fpm.d/www.conf && \
+    sed -i "s|;log_level\s*=\s*notice|log_level = notice|g" /etc/php7/php-fpm.conf && \
+    sed -i "s|;clear_env\s*=\s*no|clear_env = no|g" /etc/php7/php-fpm.d/www.conf
 
-RUN sed -i "s|display_errors\s*=\s*Off|display_errors = ${PHP_DISPLAY_ERRORS}|i" /etc/php5/php.ini && \
-    sed -i "s|display_startup_errors\s*=\s*Off|display_startup_errors = ${PHP_DISPLAY_STARTUP_ERRORS}|i" /etc/php5/php.ini && \
-    sed -i "s|error_reporting\s*=\s*E_ALL & ~E_DEPRECATED & ~E_STRICT|error_reporting = ${PHP_ERROR_REPORTING}|i" /etc/php5/php.ini && \
-    sed -i "s|;*memory_limit =.*|memory_limit = ${PHP_MEMORY_LIMIT}|i" /etc/php5/php.ini && \
-    sed -i "s|;*upload_max_filesize =.*|upload_max_filesize = ${PHP_MAX_UPLOAD}|i" /etc/php5/php.ini && \
-    sed -i "s|;*max_file_uploads =.*|max_file_uploads = ${PHP_MAX_FILE_UPLOAD}|i" /etc/php5/php.ini && \
-    sed -i "s|;*post_max_size =.*|post_max_size = ${PHP_MAX_POST}|i" /etc/php5/php.ini && \
-    sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo = ${PHP_CGI_FIX_PATHINFO}|i" /etc/php5/php.ini && \
-    sed -i "s|max_execution_time =.*|max_execution_time = ${PHP_MAX_EXECUTION_TIME}|i" /etc/php5/php.ini && \
-    sed -i "s|max_input_time =.*|max_input_time = ${PHP_MAX_INPUT_TIME}|i" /etc/php5/php.ini
+RUN sed -i "s|display_errors\s*=\s*Off|display_errors = ${PHP_DISPLAY_ERRORS}|i" /etc/php7/php.ini && \
+    sed -i "s|display_startup_errors\s*=\s*Off|display_startup_errors = ${PHP_DISPLAY_STARTUP_ERRORS}|i" /etc/php7/php.ini && \
+    sed -i "s|error_reporting\s*=\s*E_ALL & ~E_DEPRECATED & ~E_STRICT|error_reporting = ${PHP_ERROR_REPORTING}|i" /etc/php7/php.ini && \
+    sed -i "s|;*memory_limit =.*|memory_limit = ${PHP_MEMORY_LIMIT}|i" /etc/php7/php.ini && \
+    sed -i "s|;*upload_max_filesize =.*|upload_max_filesize = ${PHP_MAX_UPLOAD}|i" /etc/php7/php.ini && \
+    sed -i "s|;*max_file_uploads =.*|max_file_uploads = ${PHP_MAX_FILE_UPLOAD}|i" /etc/php7/php.ini && \
+    sed -i "s|;*post_max_size =.*|post_max_size = ${PHP_MAX_POST}|i" /etc/php7/php.ini && \
+    sed -i "s|;*cgi.fix_pathinfo=.*|cgi.fix_pathinfo = ${PHP_CGI_FIX_PATHINFO}|i" /etc/php7/php.ini && \
+    sed -i "s|max_execution_time =.*|max_execution_time = ${PHP_MAX_EXECUTION_TIME}|i" /etc/php7/php.ini && \
+    sed -i "s|max_input_time =.*|max_input_time = ${PHP_MAX_INPUT_TIME}|i" /etc/php7/php.ini
 
 # Instalación de Composer
 
-ENV COMPOSER_SIG="544e09ee996cdf60ece3804abc52599c22b1f40f4323403c44d44fdfdd586475ca9813a858088ffbc1f233e9b180f061"
+ENV COMPOSER_SIG="48e3236262b34d30969dca3c37281b3b4bbe3221bda826ac6a9a62d6444cdb0dcd0615698a5cbe587c3f0fe57a54d8f5"
 
 RUN cd /tmp && \
     php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');" && \
